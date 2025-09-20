@@ -320,7 +320,10 @@ export default function Index() {
     );
     const item = inventory.find((i) => i.id === id);
     const name = item?.name || id;
-    toast({ title: "Inventory updated", description: `Added +${amount} units.` });
+    toast({
+      title: "Inventory updated",
+      description: `Added +${amount} units.`,
+    });
     sendSupplierSms(`Restock request: ${name} +${amount} units`);
   };
 
@@ -407,8 +410,15 @@ export default function Index() {
     if (!offline) {
       const queued = outbox.filter((s) => s.status === "queued").length;
       if (queued > 0) {
-        setOutbox((prev) => prev.map((s) => (s.status === "queued" ? { ...s, status: "sent" } : s)));
-        toast({ title: "Queued SMS sent", description: `${queued} supplier message(s) delivered.` });
+        setOutbox((prev) =>
+          prev.map((s) =>
+            s.status === "queued" ? { ...s, status: "sent" } : s,
+          ),
+        );
+        toast({
+          title: "Queued SMS sent",
+          description: `${queued} supplier message(s) delivered.`,
+        });
       }
     }
   }, [offline]);
@@ -499,10 +509,7 @@ export default function Index() {
                       <Badge variant={low ? "destructive" : "secondary"}>
                         {low ? "Out" : "Low"}
                       </Badge>
-                      <Button
-                        size="sm"
-                        onClick={() => restock(item.id)}
-                      >
+                      <Button size="sm" onClick={() => restock(item.id)}>
                         Restock +10
                       </Button>
                     </div>
@@ -537,7 +544,9 @@ export default function Index() {
                     {Math.max(1, Math.round(m.demandCount / 30))}
                   </div>
                   <div className="mt-3">
-                    <Button size="sm" onClick={() => restock(m.id, 20)}>Stock up +20</Button>
+                    <Button size="sm" onClick={() => restock(m.id, 20)}>
+                      Stock up +20
+                    </Button>
                   </div>
                 </div>
               ))}
