@@ -22,10 +22,14 @@ const App = () => (
             <div className="container flex h-14 items-center justify-between">
               <a href="/" className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-md bg-gradient-to-br from-primary to-emerald-500" />
-                <span className="font-extrabold tracking-tight text-lg">jeevanline pharmacy</span>
+                <span className="font-extrabold tracking-tight text-lg">
+                  jeevanline pharmacy
+                </span>
               </a>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="hidden sm:inline">Telemedicine Operations</span>
+                <span className="hidden sm:inline">
+                  Telemedicine Operations
+                </span>
               </div>
             </div>
           </header>

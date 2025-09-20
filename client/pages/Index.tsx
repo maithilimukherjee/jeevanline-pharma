@@ -72,12 +72,54 @@ function seasonOf(date: Date) {
 }
 
 const DEFAULT_INVENTORY: InventoryItem[] = [
-  { id: "paracetamol", name: "Paracetamol 500mg", stock: 6, minStock: 12, demandCount: 128, unitPrice: 1.5 },
-  { id: "amoxicillin", name: "Amoxicillin 250mg", stock: 0, minStock: 10, demandCount: 96, unitPrice: 2.2 },
-  { id: "cetirizine", name: "Cetirizine 10mg", stock: 28, minStock: 20, demandCount: 211, unitPrice: 0.8 },
-  { id: "saline", name: "Oral Rehydration Salts", stock: 2, minStock: 8, demandCount: 75, unitPrice: 0.6 },
-  { id: "calamine", name: "Calamine Lotion", stock: 1, minStock: 6, demandCount: 59, unitPrice: 3.1 },
-  { id: "acyclovir", name: "Acyclovir 400mg", stock: 0, minStock: 8, demandCount: 43, unitPrice: 2.8 },
+  {
+    id: "paracetamol",
+    name: "Paracetamol 500mg",
+    stock: 6,
+    minStock: 12,
+    demandCount: 128,
+    unitPrice: 1.5,
+  },
+  {
+    id: "amoxicillin",
+    name: "Amoxicillin 250mg",
+    stock: 0,
+    minStock: 10,
+    demandCount: 96,
+    unitPrice: 2.2,
+  },
+  {
+    id: "cetirizine",
+    name: "Cetirizine 10mg",
+    stock: 28,
+    minStock: 20,
+    demandCount: 211,
+    unitPrice: 0.8,
+  },
+  {
+    id: "saline",
+    name: "Oral Rehydration Salts",
+    stock: 2,
+    minStock: 8,
+    demandCount: 75,
+    unitPrice: 0.6,
+  },
+  {
+    id: "calamine",
+    name: "Calamine Lotion",
+    stock: 1,
+    minStock: 6,
+    demandCount: 59,
+    unitPrice: 3.1,
+  },
+  {
+    id: "acyclovir",
+    name: "Acyclovir 400mg",
+    stock: 0,
+    minStock: 8,
+    demandCount: 43,
+    unitPrice: 2.8,
+  },
 ];
 
 const DEFAULT_REQUESTS: SmsRequest[] = [
@@ -156,7 +198,8 @@ export default function Index() {
   );
 
   const mostDemand = useMemo(
-    () => [...inventory].sort((a, b) => b.demandCount - a.demandCount).slice(0, 5),
+    () =>
+      [...inventory].sort((a, b) => b.demandCount - a.demandCount).slice(0, 5),
     [inventory],
   );
 
@@ -211,19 +254,29 @@ export default function Index() {
         const inv = inventory.find((i) => i.name === o.medicineName);
         return sum + (inv ? inv.unitPrice * o.qty : 0);
       }, 0);
-      return { key, date: day.toLocaleDateString(undefined, { weekday: "short" }), revenue };
+      return {
+        key,
+        date: day.toLocaleDateString(undefined, { weekday: "short" }),
+        revenue,
+      };
     });
     return days;
   }, [handoffs, inventory]);
 
-  const totalSales = useMemo(() => salesByDay.reduce((s, d) => s + d.revenue, 0), [salesByDay]);
+  const totalSales = useMemo(
+    () => salesByDay.reduce((s, d) => s + d.revenue, 0),
+    [salesByDay],
+  );
 
   // Actions
   const restock = (id: string, amount = 10) => {
     setInventory((prev) =>
       prev.map((i) => (i.id === id ? { ...i, stock: i.stock + amount } : i)),
     );
-    toast({ title: "Inventory updated", description: `Added +${amount} units.` });
+    toast({
+      title: "Inventory updated",
+      description: `Added +${amount} units.`,
+    });
   };
 
   const canFulfill = (req: SmsRequest) => {
@@ -236,13 +289,18 @@ export default function Index() {
       const req = prev.find((r) => r.id === id);
       if (!req) return prev;
       if (!canFulfill(req)) {
-        toast({ title: "Insufficient stock", description: `Cannot fulfill ${req.medicineName}.` });
+        toast({
+          title: "Insufficient stock",
+          description: `Cannot fulfill ${req.medicineName}.`,
+        });
         return prev;
       }
       // update inventory
       setInventory((inv) =>
         inv.map((i) =>
-          i.id === req.medicineId ? { ...i, stock: Math.max(0, i.stock - req.qty) } : i,
+          i.id === req.medicineId
+            ? { ...i, stock: Math.max(0, i.stock - req.qty) }
+            : i,
         ),
       );
       // create handoff order
@@ -255,7 +313,10 @@ export default function Index() {
         createdAt: now(),
       };
       setHandoffs((h) => [order, ...h]);
-      toast({ title: "Request accepted", description: `${req.patientName} · ${req.medicineName}` });
+      toast({
+        title: "Request accepted",
+        description: `${req.patientName} · ${req.medicineName}`,
+      });
       return prev.map((r) => (r.id === id ? { ...r, status: "accepted" } : r));
     });
   };
@@ -268,9 +329,16 @@ export default function Index() {
   };
 
   const handoff = (id: string) => {
-    setHandoffs((prev) => prev.map((o) => (o.id === id ? { ...o, handedOffAt: now() } : o)));
-    setRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status: "handedoff" } : r)));
-    toast({ title: "Handoff completed", description: "Medicine given to CHW partner." });
+    setHandoffs((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, handedOffAt: now() } : o)),
+    );
+    setRequests((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, status: "handedoff" } : r)),
+    );
+    toast({
+      title: "Handoff completed",
+      description: "Medicine given to CHW partner.",
+    });
   };
 
   // Priority score: nearest and in-stock wins
@@ -327,7 +395,9 @@ export default function Index() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">7-day revenue</p>
-                <p className="text-lg font-semibold">₹{totalSales.toFixed(2)}</p>
+                <p className="text-lg font-semibold">
+                  ₹{totalSales.toFixed(2)}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -341,18 +411,24 @@ export default function Index() {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-destructive" /> Medicine out of stock
+                <AlertCircle className="h-5 w-5 text-destructive" /> Medicine
+                out of stock
               </CardTitle>
               <Badge variant="destructive">Action needed</Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {outOfStock.length === 0 && (
-              <p className="text-sm text-muted-foreground">All good. No stock alerts.</p>
+              <p className="text-sm text-muted-foreground">
+                All good. No stock alerts.
+              </p>
             )}
             {outOfStock.map((item) => {
               const low = item.stock <= 0;
-              const pct = Math.max(0, Math.min(100, (item.stock / item.minStock) * 100));
+              const pct = Math.max(
+                0,
+                Math.min(100, (item.stock / item.minStock) * 100),
+              );
               return (
                 <div key={item.id} className="rounded-lg border p-3">
                   <div className="flex items-center justify-between gap-3">
@@ -360,11 +436,21 @@ export default function Index() {
                       <p className="font-medium flex items-center gap-2">
                         <Pill className="h-4 w-4 text-primary" /> {item.name}
                       </p>
-                      <p className="text-xs text-muted-foreground">Min {item.minStock} · In stock {item.stock}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Min {item.minStock} · In stock {item.stock}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={low ? "destructive" : "secondary"}>{low ? "Out" : "Low"}</Badge>
-                      <Button size="sm" onClick={() => restock(item.id)} disabled={disabledByOffline}>Restock +10</Button>
+                      <Badge variant={low ? "destructive" : "secondary"}>
+                        {low ? "Out" : "Low"}
+                      </Badge>
+                      <Button
+                        size="sm"
+                        onClick={() => restock(item.id)}
+                        disabled={disabledByOffline}
+                      >
+                        Restock +10
+                      </Button>
                     </div>
                   </div>
                   <div className="mt-2">
@@ -380,7 +466,8 @@ export default function Index() {
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" /> Medicines with most demand
+              <TrendingUp className="h-5 w-5 text-primary" /> Medicines with
+              most demand
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -392,7 +479,8 @@ export default function Index() {
                     <Badge variant="secondary">{m.demandCount} req</Badge>
                   </div>
                   <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
-                    <Clock className="h-3.5 w-3.5" /> Typical daily ~{Math.max(1, Math.round(m.demandCount / 30))}
+                    <Clock className="h-3.5 w-3.5" /> Typical daily ~
+                    {Math.max(1, Math.round(m.demandCount / 30))}
                   </div>
                 </div>
               ))}
@@ -404,18 +492,26 @@ export default function Index() {
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-amber-500" /> Recommendations · {season.toUpperCase()}
+              <AlertCircle className="h-5 w-5 text-amber-500" /> Recommendations
+              · {season.toUpperCase()}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {seasonalRecommendations.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No seasonal alerts.</p>
+              <p className="text-sm text-muted-foreground">
+                No seasonal alerts.
+              </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {seasonalRecommendations.map((rec, idx) => (
-                  <div key={idx} className="rounded-xl border p-4 bg-gradient-to-br from-secondary to-background">
+                  <div
+                    key={idx}
+                    className="rounded-xl border p-4 bg-gradient-to-br from-secondary to-background"
+                  >
                     <p className="font-semibold mb-1">{rec.title}</p>
-                    <p className="text-sm text-muted-foreground mb-2">{rec.reason}</p>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {rec.reason}
+                    </p>
                     <div className="flex flex-wrap gap-2">
                       {rec.meds.map((n) => (
                         <Badge key={n}>{n}</Badge>
@@ -435,12 +531,16 @@ export default function Index() {
               <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-primary" /> SMS requests
               </CardTitle>
-              <Badge variant="secondary">{requests.filter((r) => r.status === "pending").length} pending</Badge>
+              <Badge variant="secondary">
+                {requests.filter((r) => r.status === "pending").length} pending
+              </Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {requests.length === 0 && (
-              <p className="text-sm text-muted-foreground">No requests right now.</p>
+              <p className="text-sm text-muted-foreground">
+                No requests right now.
+              </p>
             )}
             {requests
               .filter((r) => r.status === "pending")
@@ -453,20 +553,44 @@ export default function Index() {
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="font-medium">{r.patientName}</p>
-                        <p className="text-xs text-muted-foreground">{r.medicineName} · Qty {r.qty}</p>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {r.distanceKm.toFixed(1)} km · {r.address}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {r.medicineName} · Qty {r.qty}
+                        </p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5" />{" "}
+                          {r.distanceKm.toFixed(1)} km · {r.address}
+                        </p>
                       </div>
                       <div className="text-right">
-                        <Badge variant={priority.includes("Assigned") ? "secondary" : priority === "Out of stock" ? "destructive" : "default"}>
+                        <Badge
+                          variant={
+                            priority.includes("Assigned")
+                              ? "secondary"
+                              : priority === "Out of stock"
+                                ? "destructive"
+                                : "default"
+                          }
+                        >
                           {priority}
                         </Badge>
                       </div>
                     </div>
                     <div className="mt-2 flex items-center gap-2">
-                      <Button size="sm" onClick={() => acceptRequest(r.id)} disabled={disabled || !canFulfill(r)} className="inline-flex">
+                      <Button
+                        size="sm"
+                        onClick={() => acceptRequest(r.id)}
+                        disabled={disabled || !canFulfill(r)}
+                        className="inline-flex"
+                      >
                         <Check className="h-4 w-4" /> Accept
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => rejectRequest(r.id)} disabled={disabled} className="inline-flex">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => rejectRequest(r.id)}
+                        disabled={disabled}
+                        className="inline-flex"
+                      >
                         <X className="h-4 w-4" /> Reject
                       </Button>
                     </div>
@@ -485,17 +609,28 @@ export default function Index() {
           </CardHeader>
           <CardContent className="space-y-3">
             {handoffs.filter((h) => !h.handedOffAt).length === 0 && (
-              <p className="text-sm text-muted-foreground">No packages ready yet.</p>
+              <p className="text-sm text-muted-foreground">
+                No packages ready yet.
+              </p>
             )}
             {handoffs
               .filter((h) => !h.handedOffAt)
               .map((h) => (
                 <div key={h.id} className="rounded-lg border p-3">
                   <p className="font-medium">{h.patientName}</p>
-                  <p className="text-xs text-muted-foreground">{h.medicineName} · Qty {h.qty}</p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {h.address}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {h.medicineName} · Qty {h.qty}
+                  </p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5" /> {h.address}
+                  </p>
                   <div className="mt-2">
-                    <Button size="sm" onClick={() => handoff(h.id)} disabled={disabledByOffline} className="inline-flex">
+                    <Button
+                      size="sm"
+                      onClick={() => handoff(h.id)}
+                      disabled={disabledByOffline}
+                      className="inline-flex"
+                    >
                       <SendIcon className="h-4 w-4" /> Handoff to CHW
                     </Button>
                   </div>
@@ -513,25 +648,73 @@ export default function Index() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-              <Stat label="Total revenue (7d)" value={`₹${totalSales.toFixed(2)}`} />
-              <Stat label="Pending requests" value={String(requests.filter((r) => r.status === "pending").length)} />
-              <Stat label="Accepted" value={String(requests.filter((r) => r.status === "accepted").length)} />
-              <Stat label="Handed off" value={String(handoffs.filter((h) => h.handedOffAt).length)} />
+              <Stat
+                label="Total revenue (7d)"
+                value={`₹${totalSales.toFixed(2)}`}
+              />
+              <Stat
+                label="Pending requests"
+                value={String(
+                  requests.filter((r) => r.status === "pending").length,
+                )}
+              />
+              <Stat
+                label="Accepted"
+                value={String(
+                  requests.filter((r) => r.status === "accepted").length,
+                )}
+              />
+              <Stat
+                label="Handed off"
+                value={String(handoffs.filter((h) => h.handedOffAt).length)}
+              />
             </div>
             <div className="h-48 sm:h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={salesByDay} margin={{ left: 0, right: 0, top: 10, bottom: 0 }}>
+                <AreaChart
+                  data={salesByDay}
+                  margin={{ left: 0, right: 0, top: 10, bottom: 0 }}
+                >
                   <defs>
                     <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
+                      <stop
+                        offset="5%"
+                        stopColor="hsl(var(--primary))"
+                        stopOpacity={0.4}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor="hsl(var(--primary))"
+                        stopOpacity={0.05}
+                      />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="date" tickLine={false} axisLine={false} className="fill-muted-foreground text-xs" />
-                  <YAxis tickLine={false} axisLine={false} className="fill-muted-foreground text-xs" />
-                  <ReTooltip formatter={(v: number) => `₹${v.toFixed(2)}`} labelClassName="text-xs" />
-                  <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorRev)" />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    className="stroke-muted"
+                  />
+                  <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    axisLine={false}
+                    className="fill-muted-foreground text-xs"
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    className="fill-muted-foreground text-xs"
+                  />
+                  <ReTooltip
+                    formatter={(v: number) => `₹${v.toFixed(2)}`}
+                    labelClassName="text-xs"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="hsl(var(--primary))"
+                    fillOpacity={1}
+                    fill="url(#colorRev)"
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -553,9 +736,26 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 function SendIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
-      <path d="M22 2L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path
+        d="M22 2L11 13"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M22 2L15 22L11 13L2 9L22 2Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
