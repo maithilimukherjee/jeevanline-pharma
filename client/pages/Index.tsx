@@ -61,6 +61,13 @@ interface HandoffOrder {
   handedOffAt?: number;
 }
 
+interface SupplierSms {
+  id: string;
+  message: string;
+  createdAt: number;
+  status: "queued" | "sent";
+}
+
 const now = () => Date.now();
 
 function seasonOf(date: Date) {
@@ -171,7 +178,16 @@ const DEFAULT_REQUESTS: SmsRequest[] = [
   },
 ];
 
-const DEFAULT_HANDOFFS: HandoffOrder[] = [];
+const DEFAULT_HANDOFFS: HandoffOrder[] = [
+  {
+    id: "h1",
+    patientName: "Asha Kumari",
+    address: "House 22, Near Anganwadi, Ward 4",
+    medicineName: "Paracetamol 500mg",
+    qty: 1,
+    createdAt: now() - 1000 * 60 * 7,
+  },
+];
 
 export default function Index() {
   const [inventory, setInventory] = useLocalStorage<InventoryItem[]>(
@@ -187,6 +203,10 @@ export default function Index() {
     DEFAULT_HANDOFFS,
   );
   const [offline, setOffline] = useLocalStorage<boolean>("jl_offline", false);
+  const [outbox, setOutbox] = useLocalStorage<SupplierSms[]>(
+    "jl_sms_outbox",
+    [],
+  );
 
   // Derived data
   const outOfStock = useMemo(
@@ -233,6 +253,17 @@ export default function Index() {
         meds: ["Paracetamol 500mg"],
       });
     }
+    // Additional sample recommendations
+    list.push({
+      title: "Village report: Water-borne illness risk",
+      reason: "Recent rainfall and water logging reported.",
+      meds: ["Oral Rehydration Salts", "Amoxicillin 250mg"],
+    });
+    list.push({
+      title: "Clinic trend: Pediatric fever",
+      reason: "Higher pediatric OPD footfall this week.",
+      meds: ["Paracetamol 500mg", "Cetirizine 10mg"],
+    });
     return list;
   }, [season]);
 
@@ -269,14 +300,28 @@ export default function Index() {
   );
 
   // Actions
+  const sendSupplierSms = (message: string) => {
+    const sms: SupplierSms = {
+      id: `sms_${Date.now()}`,
+      message,
+      createdAt: now(),
+      status: offline ? "queued" : "sent",
+    };
+    setOutbox((prev) => [sms, ...prev]);
+    toast({
+      title: offline ? "SMS queued" : "SMS sent to supplier",
+      description: offline ? "Will send when back online." : message,
+    });
+  };
+
   const restock = (id: string, amount = 10) => {
     setInventory((prev) =>
       prev.map((i) => (i.id === id ? { ...i, stock: i.stock + amount } : i)),
     );
-    toast({
-      title: "Inventory updated",
-      description: `Added +${amount} units.`,
-    });
+    const item = inventory.find((i) => i.id === id);
+    const name = item?.name || id;
+    toast({ title: "Inventory updated", description: `Added +${amount} units.` });
+    sendSupplierSms(`Restock request: ${name} +${amount} units`);
   };
 
   const canFulfill = (req: SmsRequest) => {
@@ -350,13 +395,23 @@ export default function Index() {
     return "Normal";
   };
 
-  // Simulate offline by disabling actions
-  const disabledByOffline = offline;
+  // Offline-first: allow actions; queue SMS if offline
 
   // Effects: keep title dynamic
   useEffect(() => {
     document.title = "Jeevanline Pharmacy | Dashboard";
   }, []);
+
+  // When coming back online, mark queued SMS as sent
+  useEffect(() => {
+    if (!offline) {
+      const queued = outbox.filter((s) => s.status === "queued").length;
+      if (queued > 0) {
+        setOutbox((prev) => prev.map((s) => (s.status === "queued" ? { ...s, status: "sent" } : s)));
+        toast({ title: "Queued SMS sent", description: `${queued} supplier message(s) delivered.` });
+      }
+    }
+  }, [offline]);
 
   return (
     <div className="py-6 sm:py-8">
@@ -447,7 +502,6 @@ export default function Index() {
                       <Button
                         size="sm"
                         onClick={() => restock(item.id)}
-                        disabled={disabledByOffline}
                       >
                         Restock +10
                       </Button>
@@ -481,6 +535,9 @@ export default function Index() {
                   <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
                     <Clock className="h-3.5 w-3.5" /> Typical daily ~
                     {Math.max(1, Math.round(m.demandCount / 30))}
+                  </div>
+                  <div className="mt-3">
+                    <Button size="sm" onClick={() => restock(m.id, 20)}>Stock up +20</Button>
                   </div>
                 </div>
               ))}
@@ -547,7 +604,7 @@ export default function Index() {
               .sort((a, b) => a.distanceKm - b.distanceKm)
               .map((r) => {
                 const priority = priorityLabel(r);
-                const disabled = disabledByOffline || !!r.assignedTo;
+                const disabled = !!r.assignedTo;
                 return (
                   <div key={r.id} className="rounded-lg border p-3">
                     <div className="flex items-center justify-between gap-3">
@@ -628,7 +685,6 @@ export default function Index() {
                     <Button
                       size="sm"
                       onClick={() => handoff(h.id)}
-                      disabled={disabledByOffline}
                       className="inline-flex"
                     >
                       <SendIcon className="h-4 w-4" /> Handoff to CHW
